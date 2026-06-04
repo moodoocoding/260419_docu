@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>내 문서함 - 학교문서AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="create.css">
+<link rel="stylesheet" href="css/create.css">
 <style>
 /* history.html 전용 추가 스타일 */
 body{font-family:'Pretendard',sans-serif;background:#f5f6fa;color:#1a1a2e;min-height:100vh;}
@@ -98,13 +98,34 @@ body{font-family:'Pretendard',sans-serif;background:#f5f6fa;color:#1a1a2e;min-he
       <button class="modal-btn" id="modalCopy">📋 HWP 복사</button>
       <button class="modal-btn" id="modalMd">📥 MD 다운로드</button>
       <button class="modal-btn primary" id="modalCloseBtn">닫기</button>
+  </div>
+</header>
+
+<div class="container">
+  <h1 class="page-title">📂 내 문서함</h1>
+  <p class="page-desc">최근 작성한 문서를 보관하고 다시 열어볼 수 있는 공간입니다. (최대 50개)</p>
+  <div id="historyContainer"></div>
+</div>
+
+<!-- 미리보기 모달 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">내 문서함 미리보기</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="modal-btn" id="modalCopy">📋 HWP 복사</button>
+      <button class="modal-btn" id="modalMd">📥 MD 다운로드</button>
+      <button class="modal-btn primary" id="modalCloseBtn">닫기</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="history.js"></script>
-<script type="module" src="auth.js"></script>
+<script type="module" src="js/history.js"></script>
+<script type="module" src="js/auth.js"></script>
 </body>
 </html>

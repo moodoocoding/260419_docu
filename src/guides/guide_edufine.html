@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HWP 서식 유지 가이드 - 학교문서AI</title>
+<title>에듀파인 복잡도 선택 가이드 - 학교문서AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="create.css">
+<link rel="stylesheet" href="../css/create.css">
 <style>
   .guide-container { max-width: 1200px; margin: 40px auto; padding: 0 24px; display: grid; grid-template-columns: 280px 1fr; gap: 40px; }
   .sidebar { position: sticky; top: 100px; height: fit-content; }
@@ -40,32 +40,32 @@
 
 <header>
   <div class="header-inner">
-    <a class="logo" href="index.html">
+    <a class="logo" href="../index.html">
       <div class="logo-icon">📋</div>
       학교문서AI
     </a>
     <nav>
-      <a href="create.html?type=GONGMUN">에듀파인</a>
-      <a href="create.html?type=PLAN">계획서</a>
-      <a href="create.html?type=NEWSLETTER">가정통신문</a>
+      <a href="../create.html?type=GONGMUN">에듀파인</a>
+      <a href="../create.html?type=PLAN">계획서</a>
+      <a href="../create.html?type=NEWSLETTER">가정통신문</a>
       <span class="nav-separator" aria-hidden="true">|</span>
-      <a href="create.html?type=MESSAGE">문자 답장</a>
-      <a href="messenger.html">소통메신저</a>
-      <a href="contacts.html">주소록</a>
+      <a href="../create.html?type=MESSAGE">문자 답장</a>
+      <a href="../messenger.html">소통메신저</a>
+      <a href="../contacts.html">주소록</a>
       <span class="nav-separator" aria-hidden="true">|</span>
-      <a href="leading.html">선도학교</a>
+      <a href="../leading.html">선도학교</a>
       <div class="dropdown">
         <a href="#" class="dropbtn">개발중</a>
         <div class="dropdown-content">
-          <a href="calendar.html">학사일정</a>
-          <a href="create.html?type=REPORT">보고서</a>
-          <a href="create.html?type=PROMOTION">보도자료</a>
+          <a href="../calendar.html">학사일정</a>
+          <a href="../create.html?type=REPORT">보고서</a>
+          <a href="../create.html?type=PROMOTION">보도자료</a>
         </div>
       </div>
     </nav>
     <div class="header-actions">
-      <a class="header-btn" href="history.html">내 문서함</a>
-      <a class="header-btn" href="settings.html">학교 설정</a>
+      <a class="header-btn" href="../history.html">내 문서함</a>
+      <a class="header-btn" href="../settings.html">학교 설정</a>
     </div>
   </div>
 </header>
@@ -75,45 +75,47 @@
     <div class="sidebar-title">사용 가이드</div>
     <ul class="guide-nav">
       <li><a href="guide_setup.html">⚙️ 학교 정보 설정</a></li>
-      <li><a href="guide_edufine.html">⚖️ 에듀파인 복잡도</a></li>
-      <li><a href="guide_hwp.html" class="active">📝 HWP 서식 유지</a></li>
+      <li><a href="guide_edufine.html" class="active">⚖️ 에듀파인 복잡도</a></li>
+      <li><a href="guide_hwp.html">📝 HWP 서식 유지</a></li>
       <li><a href="guide_report.html">📊 보고서 자동 생성</a></li>
     </ul>
   </aside>
 
   <div class="guide-card">
     <div class="guide-header">
-      <span class="guide-tag">활용 팁</span>
-      <h1>HWP 붙여넣기 시 서식 유지 방법</h1>
-      <p>웹에서 작성된 AI 결과물을 한컴오피스 한글(HWP) 문서로 완벽하게 옮기는 비결입니다.</p>
+      <span class="guide-tag">문서 작성</span>
+      <h1>에듀파인 복잡도(간단/중간/상세) 선택 기준</h1>
+      <p>작성하려는 문서의 목적과 성격에 따라 가장 적합한 양식을 선택하는 방법입니다.</p>
     </div>
 
     <div class="guide-body">
-      <h2>1. 복사 버튼 활용</h2>
-      <p>문서 생성 완료 후 우측 상단의 <strong>📋 HWP 복사</strong> 버튼을 클릭합니다. 단순 텍스트가 아닌, 서식 정보가 포함된 HTML 데이터가 클립보드에 복사됩니다.</p>
+      <h2>1. 복잡도 단계별 특징</h2>
+      <p>문서 작성 화면에서 세 가지 단계 중 하나를 선택할 수 있습니다.</p>
       
-      <img src="/guide_hwp.png" alt="HWP 복사 버튼 위치" class="guide-img">
+      <img src="/guide_edufine.png" alt="에듀파인 복잡도 선택" class="guide-img">
 
-      <h2>2. 한글(HWP)에 붙여넣기</h2>
-      <p>한글 프로그램을 실행하고 <strong>Ctrl + V</strong>를 누릅니다.</p>
-      <p>이때 붙여넣기 옵션 창이 뜬다면 <strong>'텍스트 형식으로 붙여넣기'가 아닌 일반 붙여넣기</strong>를 선택해야 표와 글자 모양이 유지됩니다.</p>
+      <ul>
+        <li><strong>간단 (Simple)</strong>: 1~2페이지 분량의 가벼운 공문. 단순 공람, 결과 보고, 단순 안내 등에 적합합니다.</li>
+        <li><strong>중간 (Standard)</strong>: 가장 일반적으로 사용되는 사업 계획서 양식입니다. 추진 배경, 목적, 방침, 세부 계획이 포함됩니다.</li>
+        <li><strong>상세 (Detailed)</strong>: 예산 내역, 복잡한 시간표, 다수의 항목이 포함된 전문적인 계획서입니다. 대외 기관 발송용으로 추천합니다.</li>
+      </ul>
 
       <div class="tip-box">
-        <strong>✨ 들여쓰기가 완벽한 이유</strong>
-        학교문서AI는 일반 공백 대신 한글 프로그램에서 인식하는 <strong>전각 공백(Full-width space)</strong>을 자동으로 계산하여 삽입합니다. 따라서 별도의 문단 모양 설정 없이도 행정 편람 기준의 들여쓰기가 유지됩니다.
+        <strong>📌 선택 팁</strong>
+        처음에는 '중간' 단계로 작성해 보시고, 내용이 너무 많거나 적다고 느껴지면 단계를 조절하여 다시 생성해 보세요.
       </div>
 
-      <h2>3. 추가 편집</h2>
-      <p>표의 너비나 글자 크기 등은 한글 프로그램 내에서 평소처럼 편집하시면 됩니다.</p>
+      <h2>2. 내용 구성 방식</h2>
+      <p>AI는 선택한 단계에 맞춰 '행정업무운영 편람'의 항목 기호 체계(1., 가., 1), 가))를 자동으로 배분하여 논리적인 구조를 만듭니다.</p>
     </div>
 
     <div class="guide-footer">
-      <a href="guide_edufine.html" class="footer-nav-btn">← 에듀파인 복잡도 가이드</a>
-      <a href="guide_report.html" class="footer-nav-btn">보고서 자동 생성 가이드 →</a>
+      <a href="guide_setup.html" class="footer-nav-btn">← 학교 정보 설정 가이드</a>
+      <a href="guide_hwp.html" class="footer-nav-btn">HWP 서식 유지 가이드 →</a>
     </div>
   </div>
 </div>
 
-<script type="module" src="auth.js"></script>
+<script type="module" src="../js/auth.js"></script>
 </body>
 </html>

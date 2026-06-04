@@ -1,7 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const ROOT = 'C:\\Users\\panth\\Documents\\바이브 코딩\\학교문서';
+const ROOT = path.join(__dirname, '..', 'src');
 const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, 'http://localhost:3000');
   const pathname = decodeURIComponent(parsedUrl.pathname);
