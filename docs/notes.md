@@ -9,6 +9,8 @@ Last updated: 2026-05-23
 - Document editor: `create.html` + `app.js`
 - Document archive: `history.html` + `history.js`
 - Auth: `login.html` + `auth.js` + `supabase.js`
+- Product requirements: `docs/prd.md`
+- Academic calendar work plan: `docs/academic-calendar-work-plan.md`
 
 ## What Changed Recently (2026-05-23)
 - **스마트 폴백 (Smart Fallback) 적용**:

@@ -14,6 +14,7 @@ export default defineConfig({
         settings: resolve(__dirname, 'settings.html'),
         login: resolve(__dirname, 'login.html'),
         history: resolve(__dirname, 'history.html'),
+        calendar: resolve(__dirname, 'calendar.html'),
         contacts: resolve(__dirname, 'contacts.html'),
         guide_setup: resolve(__dirname, 'guide_setup.html'),
         guide_edufine: resolve(__dirname, 'guide_edufine.html'),
