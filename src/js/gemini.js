@@ -390,7 +390,92 @@ JSON 외 다른 텍스트는 절대 포함하지 마세요.
 // 클라이언트 측 세션 인메모리 쿨다운 상태 관리
 const clientCooldowns = {};
 
-function getClientOrderedModels(baseModels) {
+function parseClientModelMeta(name) {
+  const cleanName = name.replace(/^models\//, '');
+  const match = cleanName.match(/^gemini-(\d+(?:\.\d+)?)-([a-z0-9\-]+)/);
+  if (!match) return { version: 0, tier: 'other', cleanName };
+  
+  const version = parseFloat(match[1]);
+  const tier = match[2];
+  return { version, tier, cleanName };
+}
+
+function sortClientModels(modelNames) {
+  const filtered = modelNames
+    .map(name => parseClientModelMeta(name))
+    .filter(m => m.cleanName.startsWith('gemini-') && 
+                 !m.cleanName.includes('image') && 
+                 !m.cleanName.includes('embedding') && 
+                 !m.cleanName.includes('experimental') &&
+                 !m.cleanName.includes('thinking')); // 불필요한 모델 제외
+  
+  const tierPriority = {
+    'flash-lite-preview': 1,
+    'flash-lite': 2,
+    'flash': 3,
+    'pro': 4
+  };
+
+  filtered.sort((a, b) => {
+    if (b.version !== a.version) {
+      return b.version - a.version;
+    }
+    const priorityA = tierPriority[a.tier] || 99;
+    const priorityB = tierPriority[b.tier] || 99;
+    return priorityA - priorityB;
+  });
+
+  return filtered.map(m => m.cleanName);
+}
+
+async function fetchLatestClientModels(apiKey) {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data.models) return null;
+    
+    const modelNames = data.models
+      .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+      .map(m => m.name.replace(/^models\//, ''));
+    
+    return sortClientModels(modelNames);
+  } catch (e) {
+    console.warn('[Auto Model Update Client] Failed to fetch models:', e);
+    return null;
+  }
+}
+
+async function getOrUpdateClientModels(apiKey) {
+  const DEFAULT_MODELS = ['gemini-3.5-flash', 'gemini-3.1-pro', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview', 'gemini-2.5-flash'];
+  
+  const cached = localStorage.getItem('schoolDocModels');
+  const lastFetch = localStorage.getItem('schoolDocModelsLastFetch');
+  
+  const now = Date.now();
+  const currentDate = new Date(now);
+  const lastDate = lastFetch ? new Date(parseInt(lastFetch)) : new Date(0);
+  
+  const isFirstOfMonth = currentDate.getDate() === 1;
+  const isNewMonth = currentDate.getMonth() !== lastDate.getMonth() || currentDate.getFullYear() !== lastDate.getFullYear();
+  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간 캐싱
+  const needsRefresh = !cached || !lastFetch || (now - parseInt(lastFetch) > CACHE_DURATION) || (isFirstOfMonth && isNewMonth);
+
+  if (needsRefresh && apiKey) {
+    const fetched = await fetchLatestClientModels(apiKey);
+    if (fetched && fetched.length > 0) {
+      localStorage.setItem('schoolDocModels', JSON.stringify(fetched));
+      localStorage.setItem('schoolDocModelsLastFetch', now.toString());
+      return fetched;
+    }
+  }
+
+  return cached ? JSON.parse(cached) : DEFAULT_MODELS;
+}
+
+async function getClientOrderedModels(apiKey) {
+  const baseModels = await getOrUpdateClientModels(apiKey);
   const now = Date.now();
   const active = [];
   const cooling = [];
@@ -444,8 +529,7 @@ async function callGemini(apiKey, promptContext, docInstruction, fileDataList, c
     throw new Error(lastFunctionError);
   }
 
-  const baseModels = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
-  const orderedModels = getClientOrderedModels(baseModels);
+  const orderedModels = await getClientOrderedModels(apiKey);
   let lastError = '';
 
   const parts = [];

@@ -1,14 +1,94 @@
-const MODELS = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
+const DEFAULT_MODELS = ['gemini-3.5-flash', 'gemini-3.1-pro', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview', 'gemini-2.5-flash'];
 
-// 서버 인메모리 쿨다운 상태 관리
+// 서버 인메모리 캐싱 및 쿨다운 상태 관리
+let cachedModels = [];
+let lastFetchTime = 0;
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간 캐싱
+
 const cooldowns = {};
 
-function getOrderedModels() {
+function parseModelMeta(name) {
+  const cleanName = name.replace(/^models\//, '');
+  const match = cleanName.match(/^gemini-(\d+(?:\.\d+)?)-([a-z0-9\-]+)/);
+  if (!match) return { version: 0, tier: 'other', cleanName };
+  
+  const version = parseFloat(match[1]);
+  const tier = match[2];
+  return { version, tier, cleanName };
+}
+
+function sortModels(modelNames) {
+  const filtered = modelNames
+    .map(name => parseModelMeta(name))
+    .filter(m => m.cleanName.startsWith('gemini-') && 
+                 !m.cleanName.includes('image') && 
+                 !m.cleanName.includes('embedding') && 
+                 !m.cleanName.includes('experimental') &&
+                 !m.cleanName.includes('thinking')); // 불필요한 모델 제외
+  
+  const tierPriority = {
+    'flash-lite-preview': 1,
+    'flash-lite': 2,
+    'flash': 3,
+    'pro': 4
+  };
+
+  filtered.sort((a, b) => {
+    if (b.version !== a.version) {
+      return b.version - a.version;
+    }
+    const priorityA = tierPriority[a.tier] || 99;
+    const priorityB = tierPriority[b.tier] || 99;
+    return priorityA - priorityB;
+  });
+
+  return filtered.map(m => m.cleanName);
+}
+
+async function fetchLatestModels(apiKey) {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data.models) return null;
+    
+    const modelNames = data.models
+      .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+      .map(m => m.name.replace(/^models\//, ''));
+    
+    return sortModels(modelNames);
+  } catch (e) {
+    console.error('[Auto Model Update] Failed to fetch models from Google:', e);
+    return null;
+  }
+}
+
+async function getOrderedModels(apiKey) {
   const now = Date.now();
+  const currentDate = new Date(now);
+  const lastDate = new Date(lastFetchTime);
+
+  const isFirstOfMonth = currentDate.getDate() === 1;
+  const isNewMonth = currentDate.getMonth() !== lastDate.getMonth() || currentDate.getFullYear() !== lastDate.getFullYear();
+  const needsRefresh = cachedModels.length === 0 || 
+                         (now - lastFetchTime > CACHE_DURATION) || 
+                         (isFirstOfMonth && isNewMonth);
+
+  if (needsRefresh && apiKey) {
+    const fetched = await fetchLatestModels(apiKey);
+    if (fetched && fetched.length > 0) {
+      cachedModels = fetched;
+      lastFetchTime = now;
+      console.log('[Auto Model Update] Successfully updated models list:', cachedModels);
+    }
+  }
+
+  const baseModels = cachedModels.length > 0 ? cachedModels : DEFAULT_MODELS;
   const active = [];
   const cooling = [];
 
-  for (const model of MODELS) {
+  for (const model of baseModels) {
     if (cooldowns[model] && cooldowns[model] > now) {
       cooling.push(model);
     } else {
@@ -58,7 +138,7 @@ export default async function handler(req, res) {
     });
 
     let lastError = '';
-    const orderedModels = getOrderedModels();
+    const orderedModels = await getOrderedModels(apiKey);
     
     for (const model of orderedModels) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;

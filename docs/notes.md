@@ -22,6 +22,9 @@ Last updated: 2026-06-07
 - **대용량 파일 업로드 413 오류 조치 및 Vercel 최적화 (v1.5.2 - v1.5.3)**:
   - Netlify 관련 설정과 코드를 완전 제거하고 Vercel `/api` 라우트로 서버리스 함수를 단일화했습니다.
   - Vercel 전송 한도(4.5MB)를 초과하지 않도록 클라이언트 단 이미지 자동 압축(Canvas 기반 2048px 이하 리사이즈, JPEG 0.8 품질)을 도입하여 대용량 이미지도 413 에러 없이 전송할 수 있게 개선했습니다. PDF 등의 문서는 4MB 초과 제한을 유지합니다.
+- **최신 AI 모델(Gemini 3.5/3.1) 자동 갱신 및 캐싱 파이프라인 탑재 (v1.5.4)**:
+  - 수동 업데이트 없이 Google API `models.list`를 동적으로 조회하여 최신 모델들을 자동으로 정렬(버전 내림차순, Flash-Lite/Flash/Pro 가중치순) 및 적용합니다.
+  - Vercel 백엔드(인메모리 캐시) 및 브라우저(로컬스토리지 캐시)에 24시간 캐시를 적용하여 매월 1일 또는 만료 시 자동 갱신합니다.
 
 ## Important Behavior
 - Creating a document in `src/js/app.js` saves to Supabase first.
@@ -45,7 +48,7 @@ Last updated: 2026-06-07
 
 ## Git / Deploy Notes
 - Local changes were committed on `master`.
-- Pushed to GitHub with commit `fix: Vercel 배포 최적화 및 클라이언트 이미지 자동 압축 기능 도입`.
+- Pushed to GitHub with commit `fix: AI 모델 자동 갱신(Gemini 3.5/3.1) 및 캐싱 파이프라인 적용`.
 
 ## Caution
 - Do not store GitHub tokens or Supabase secrets in the repo.
