@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_LEADING_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
-const USE_NETLIFY_FUNCTION = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+const USE_VERCEL_FUNCTION = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
 const IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 
 const DEFAULT_PROMPT = `A chest-up portrait of a character based on the uploaded photo. The style must be a Children's 2D cartoon style with a Chibi proportion (3 to 3.5 heads tall). Use Bold, thick black outlines and 2D flat color with simple cell shading. The character should have Simple dot eyes, a Minimalist nose, and a Simple line mouth. Maintain the original hairstyle and clothing features but simplify them. The background must be transparent or solid white. Exclude realism, webtoon, and semi-realism styles. Focus only on the most prominent person in the image`;
@@ -88,46 +88,36 @@ function clearImageCooldown(model) {
 }
 
 async function requestCharacterImage(model, prompt, file) {
-  if (USE_NETLIFY_FUNCTION) {
-    const functionBases = location.hostname.includes('vercel.app')
-      ? ['/api', '/.netlify/functions']
-      : ['/.netlify/functions', '/api'];
-    let lastFunctionError = '';
+  if (USE_VERCEL_FUNCTION) {
+    const response = await fetch(`/api/generate-character`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        imageBase64: selectedDataUrl,
+        mimeType: file.type
+      })
+    });
 
-    for (const base of functionBases) {
-      const response = await fetch(`${base}/generate-character`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          imageBase64: selectedDataUrl,
-          mimeType: file.type
-        })
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (response.ok) {
-        return {
-          candidates: [{
-            content: {
-              parts: [{
-                inlineData: {
-                  mimeType: data.mimeType,
-                  data: data.imageBase64
-                }
-              }]
-            }
-          }],
-          model: data.model // 성공한 모델 명 전달
-        };
-      }
-
-      lastFunctionError = data.error || `Function Error ${response.status}`;
-      if (response.status === 404) continue;
-      throw new Error(lastFunctionError);
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) {
+      return {
+        candidates: [{
+          content: {
+            parts: [{
+              inlineData: {
+                mimeType: data.mimeType,
+                data: data.imageBase64
+              }
+            }]
+          }
+        }],
+        model: data.model
+      };
     }
 
-    throw new Error(lastFunctionError || 'Function endpoint not found.');
+    const lastFunctionError = data.error || `Function Error ${response.status}`;
+    throw new Error(lastFunctionError);
   }
 
   const body = {
@@ -179,7 +169,7 @@ function getFriendlyImageError(error) {
 }
 
 async function generateCharacter() {
-  if (!USE_NETLIFY_FUNCTION && !API_KEY) {
+  if (!USE_VERCEL_FUNCTION && !API_KEY) {
     showToast('.env의 VITE_GEMINI_API_KEY 값을 확인해주세요.');
     return;
   }
@@ -193,7 +183,7 @@ async function generateCharacter() {
 
   let lastError = null;
   try {
-    const models = USE_NETLIFY_FUNCTION ? ['netlify-function'] : getOrderedImageModels(IMAGE_MODELS);
+    const models = USE_VERCEL_FUNCTION ? ['vercel-function'] : getOrderedImageModels(IMAGE_MODELS);
     for (const model of models) {
       try {
         const data = await requestCharacterImage(model, DEFAULT_PROMPT, selectedFile);
@@ -204,7 +194,7 @@ async function generateCharacter() {
 
         // 성공 피드백 반영
         const usedModel = data.model || model;
-        if (usedModel && usedModel !== 'netlify-function') {
+        if (usedModel && usedModel !== 'vercel-function') {
           clearImageCooldown(usedModel);
         }
 
@@ -219,7 +209,7 @@ async function generateCharacter() {
       } catch (error) {
         lastError = error;
         console.warn(`${model} failed`, error);
-        if (model !== 'netlify-function') {
+        if (model !== 'vercel-function') {
           setImageCooldown(model); // 실패 피드백 반영 (쿨다운 적용)
         }
         if (isQuotaError(error)) break;

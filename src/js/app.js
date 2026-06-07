@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { getDocInstruction, callGemini, LOADING_MESSAGES, LOADING_MESSAGES_MESSAGE } from './gemini.js';
+import { getDocInstruction, callGemini, LOADING_MESSAGES, LOADING_MESSAGES_MESSAGE, compressImageFile } from './gemini.js';
 import { copyHtmlForHwp, addIndentationToHtml, downloadMarkdown, printDocument } from './export.js';
 
 // app.js — 메인 UI 로직: 폼 전환, 이벤트, AI 호출 연결
@@ -133,16 +133,42 @@ import { copyHtmlForHwp, addIndentationToHtml, downloadMarkdown, printDocument }
     }
   }
 
-  function handleFiles() {
+  async function handleFiles() {
     const newFiles = Array.from(fileInput.files);
-    newFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        attachedFiles.push({ file, base64: reader.result, mimeType: file.type, name: file.name });
-        renderFileList();
-      };
-      reader.readAsDataURL(file);
-    });
+    for (const file of newFiles) {
+      if (file.type.startsWith('image/')) {
+        try {
+          showToast(`⚙️ 이미지 압축 중: ${file.name}`);
+          const compressed = await compressImageFile(file);
+          if (compressed.size > 4 * 1024 * 1024) {
+            showToast(`⚠️ ${file.name} 이미지 파일이 너무 큽니다. 압축 후에도 4MB를 초과하여 첨부할 수 없습니다.`);
+            continue;
+          }
+          attachedFiles.push({
+            file: new File([file], file.name, { type: 'image/jpeg' }),
+            base64: compressed.base64,
+            mimeType: 'image/jpeg',
+            name: file.name
+          });
+          renderFileList();
+          showToast(`✅ 이미지 압축 완료 및 첨부: ${file.name}`);
+        } catch (err) {
+          console.error(err);
+          showToast(`⚠️ ${file.name} 이미지 압축 중 오류가 발생했습니다.`);
+        }
+      } else {
+        if (file.size > 4 * 1024 * 1024) {
+          showToast(`⚠️ ${file.name} 문서 파일이 너무 큽니다. PDF/HWP 등 일반 문서 파일은 4MB 이하만 첨부할 수 있습니다.`);
+          continue;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          attachedFiles.push({ file, base64: reader.result, mimeType: file.type, name: file.name });
+          renderFileList();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
   }
 
   function renderFileList() {

@@ -115,19 +115,27 @@ changeImageBtn.addEventListener('click', () => {
   screenshotInput.click();
 });
 
-function loadImageFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    currentImageDataUrl = e.target.result;
-    currentImageMime = file.type;
-    currentImageBase64 = e.target.result;
+async function loadImageFile(file) {
+  showToast(`⚙️ 이미지 압축 중: ${file.name}`);
+  try {
+    const compressed = await window.compressImageFile(file);
+    if (compressed.size > 4 * 1024 * 1024) {
+      showToast(`⚠️ 이미지 파일이 너무 큽니다. 압축 후에도 4MB를 초과하여 업로드할 수 없습니다.`);
+      return;
+    }
+    currentImageDataUrl = compressed.base64;
+    currentImageMime = 'image/jpeg';
+    currentImageBase64 = compressed.base64;
 
     screenshotPreview.src = currentImageDataUrl;
     screenshotPreview.style.display = 'block';
     dropZoneInner.style.display = 'none';
     uploadActions.style.display = 'flex';
-  };
-  reader.readAsDataURL(file);
+    showToast(`✅ 이미지 압축 완료: ${file.name}`);
+  } catch (err) {
+    console.error(err);
+    showToast(`⚠️ 이미지 압축 중 오류가 발생했습니다.`);
+  }
 }
 
 // ===== 분석 실행 =====

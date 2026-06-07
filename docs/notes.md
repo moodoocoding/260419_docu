@@ -19,6 +19,9 @@ Last updated: 2026-06-07
   - 데이터베이스 SQL을 `supabase/`로, 로컬 간이 서버 `server.js`를 `server/` 폴더로 격리 및 상대경로 리팩토링했습니다.
 - **문서 작성 페이지 중복 UI 렌더링 오류 수정 (v1.5.1)**:
   - `src/create.html` 파일 내부 하단에 잘못 중복 주입되어 어떤 생성창을 열든 무조건 하단에 "에듀파인 작성" 영역이 덧붙여 노출되던 마크업 오류(HTML 중복 블록)를 깔끔하게 제거했습니다.
+- **대용량 파일 업로드 413 오류 조치 및 Vercel 최적화 (v1.5.2 - v1.5.3)**:
+  - Netlify 관련 설정과 코드를 완전 제거하고 Vercel `/api` 라우트로 서버리스 함수를 단일화했습니다.
+  - Vercel 전송 한도(4.5MB)를 초과하지 않도록 클라이언트 단 이미지 자동 압축(Canvas 기반 2048px 이하 리사이즈, JPEG 0.8 품질)을 도입하여 대용량 이미지도 413 에러 없이 전송할 수 있게 개선했습니다. PDF 등의 문서는 4MB 초과 제한을 유지합니다.
 
 ## Important Behavior
 - Creating a document in `src/js/app.js` saves to Supabase first.
@@ -42,7 +45,7 @@ Last updated: 2026-06-07
 
 ## Git / Deploy Notes
 - Local changes were committed on `master`.
-- Pushed to GitHub with commit `4d307b1` (문서 작성 페이지의 하단 중복 UI 렌더링 오류 해결).
+- Pushed to GitHub with commit `fix: Vercel 배포 최적화 및 클라이언트 이미지 자동 압축 기능 도입`.
 
 ## Caution
 - Do not store GitHub tokens or Supabase secrets in the repo.

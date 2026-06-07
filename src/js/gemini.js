@@ -420,39 +420,28 @@ function clearClientCooldown(model) {
 async function callGemini(apiKey, promptContext, docInstruction, fileDataList, customSysInstruction = null) {
   const useFunction = location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
   if (useFunction) {
-    const functionBases = location.hostname.includes('vercel.app')
-      ? ['/api', '/.netlify/functions']
-      : ['/.netlify/functions', '/api'];
+    const response = await fetch(`/api/gemini`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        promptContext,
+        docInstruction,
+        fileDataList,
+        customSysInstruction,
+        systemInstruction: SYSTEM_INSTRUCTION
+      })
+    });
 
-    let lastFunctionError = '';
-    for (const base of functionBases) {
-      const response = await fetch(`${base}/gemini`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          promptContext,
-          docInstruction,
-          fileDataList,
-          customSysInstruction,
-          systemInstruction: SYSTEM_INSTRUCTION
-        })
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (response.ok) {
-        // 서버에서 어떤 모델로 성공했는지 반환하면 클라이언트 쿨다운에도 반영
-        if (data.model) {
-          clearClientCooldown(data.model);
-        }
-        return data.text || '';
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) {
+      if (data.model) {
+        clearClientCooldown(data.model);
       }
-
-      lastFunctionError = data.error || `Function Error ${response.status}`;
-      if (response.status === 404) continue;
-      throw new Error(lastFunctionError);
+      return data.text || '';
     }
 
-    throw new Error(lastFunctionError || 'Function endpoint not found.');
+    const lastFunctionError = data.error || `Function Error ${response.status}`;
+    throw new Error(lastFunctionError);
   }
 
   const baseModels = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
@@ -529,6 +518,69 @@ async function callGemini(apiKey, promptContext, docInstruction, fileDataList, c
   throw new Error(lastError || 'AI 문서 생성 중 오류가 발생했습니다. API 키를 확인해주세요.');
 }
 
+/**
+ * 캔버스를 사용하여 이미지 파일을 압축합니다.
+ * @param {File} file - 압축할 이미지 파일 객체
+ * @param {number} maxDimension - 최대 가로 또는 세로 해상도 (기본값: 2048)
+ * @param {number} quality - JPEG 압축 품질 (기본값: 0.8)
+ * @returns {Promise<{base64: string, name: string, type: string, size: number}>}
+ */
+async function compressImageFile(file, maxDimension = 2048, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('이미지 파일이 아닙니다.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('이미지 압축에 실패했습니다.'));
+            return;
+          }
+          const reader2 = new FileReader();
+          reader2.onload = () => {
+            resolve({
+              base64: reader2.result,
+              name: file.name,
+              type: 'image/jpeg',
+              size: blob.size
+            });
+          };
+          reader2.onerror = reject;
+          reader2.readAsDataURL(blob);
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // 글로벌 등록
 window.SYSTEM_INSTRUCTION = SYSTEM_INSTRUCTION;
 window.LOADING_MESSAGES = LOADING_MESSAGES;
@@ -539,6 +591,7 @@ window.MESSENGER_SYSTEM_INSTRUCTION = MESSENGER_SYSTEM_INSTRUCTION;
 window.MESSENGER_ANALYZE_SYSTEM_INSTRUCTION = MESSENGER_ANALYZE_SYSTEM_INSTRUCTION;
 window.getDocInstruction = getDocInstruction;
 window.callGemini = callGemini;
+window.compressImageFile = compressImageFile;
 
 export {
   SYSTEM_INSTRUCTION,
@@ -549,5 +602,6 @@ export {
   MESSENGER_SYSTEM_INSTRUCTION,
   MESSENGER_ANALYZE_SYSTEM_INSTRUCTION,
   getDocInstruction,
-  callGemini
+  callGemini,
+  compressImageFile
 };

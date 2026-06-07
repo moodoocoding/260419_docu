@@ -691,18 +691,45 @@ async function analyzeFile(file) {
         return;
     }
 
-    showToast('파일 분석 중... 잠시만 기다려주세요.');
-    
-    try {
-        const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
+    showToast('파일 분석 준비 중...');
 
+    let targetBase64 = '';
+    let targetMimeType = file.type || 'application/pdf';
+    let targetFileName = file.name;
+
+    try {
+        if (uploadKind === 'image') {
+            try {
+                showToast(`⚙️ 이미지 압축 중: ${file.name}`);
+                const compressed = await window.compressImageFile(file);
+                if (compressed.size > 4 * 1024 * 1024) {
+                    alert('⚠️ 이미지 파일이 너무 큽니다. 압축 후에도 4MB를 초과하여 분석할 수 없습니다.');
+                    return;
+                }
+                targetBase64 = compressed.base64;
+                targetMimeType = 'image/jpeg';
+            } catch (err) {
+                console.error(err);
+                alert('이미지 압축 중 오류가 발생했습니다.');
+                return;
+            }
+        } else {
+            if (file.size > 4 * 1024 * 1024) {
+                alert('⚠️ PDF 파일 크기가 너무 큽니다. 일반 문서 파일은 4MB 이하만 분석할 수 있습니다.');
+                return;
+            }
+            targetBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        showToast('파일 분석 중... 잠시만 기다려주세요.');
+        
         const docInst = window.getDocInstruction('CALENDAR_ANALYZE', { settings: {} });
-        const responseText = await window.callGemini(apiKey, `첨부한 연간 시간표 ${uploadKind === 'pdf' ? 'PDF' : '이미지'} 파일을 분석하세요. 파일명은 "${file.name}"입니다. 상단/하단의 시수 편제표는 allocation에, 월별/주별 날짜 칸의 실제 시간표는 schedule에 채우세요. schedule 키는 반드시 YYYY-MM-DD-교시 형식으로 만들고, 교시는 1~10 범위만 사용하세요.`, docInst, [{ base64, mimeType: file.type || 'application/pdf' }]);
+        const responseText = await window.callGemini(apiKey, `첨부한 연간 시간표 ${uploadKind === 'pdf' ? 'PDF' : '이미지'} 파일을 분석하세요. 파일명은 "${targetFileName}"입니다. 상단/하단의 시수 편제표는 allocation에, 월별/주별 날짜 칸의 실제 시간표는 schedule에 채우세요. schedule 키는 반드시 YYYY-MM-DD-교시 형식으로 만들고, 교시는 1~10 범위만 사용하세요.`, docInst, [{ base64: targetBase64, mimeType: targetMimeType }]);
         console.log("AI Response Raw:", responseText);
         
         const jsonStr = extractJsonObject(responseText);
